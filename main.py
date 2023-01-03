@@ -24,6 +24,7 @@ def move_ball(dx, dy):
         dy = -dy
 
     if ball.colliderect(player) and dx < 0:
+        pong_sound.play()
         if abs(ball.left - player.right) < 10:
             dx = -dx
         elif abs(ball.top - player.bottom) < 10 and dy < 0:
@@ -32,6 +33,7 @@ def move_ball(dx, dy):
             dy = -dy
 
     if ball.colliderect(opponent) and dx > 0:
+        pong_sound.play()
         if abs(ball.right - opponent.left) < 10:
             dx = -dx
         elif abs(ball.top - opponent.bottom) < 10 and dy < 0:
@@ -40,7 +42,7 @@ def move_ball(dx, dy):
             dy = -dy
 
     now = pygame.time.get_ticks()
-    if now - score_time > pause_len:
+    if now - score_time > pause_len and not game_is_over:
         ball.x += dx
         ball.y += dy
 
@@ -57,6 +59,16 @@ def restart_ball(dx, dy):
     return dx, dy
 
 
+def play_sound():
+    if player_score == target_score:
+        win_sound.play()
+    elif opponent_score == target_score:
+        lose_sound.play()
+    else:
+        score_sound.play()
+
+
+pygame.init()
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 500
 
@@ -78,9 +90,18 @@ ball_dx, ball_dy = -7, 7
 score_time = 0
 pause_len = 1000
 player_score, opponent_score = 0, 0
+target_score = 1
+game_is_over = False
+end_text = None
+restart_text = "Press R to Restart"
+
+# Sound effects
+pong_sound = pygame.mixer.Sound('pong.ogg')
+score_sound = pygame.mixer.Sound('score.ogg')
+win_sound = pygame.mixer.Sound('win.ogg')
+lose_sound = pygame.mixer.Sound('win.ogg')
 
 # Screen initialization
-pygame.init()
 clock = pygame.time.Clock()
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption('Pong')
@@ -95,6 +116,10 @@ while running:
 
         # Player controls
         if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_r and game_is_over:
+                game_is_over = False
+                player_score, opponent_score = 0, 0
+
             if event.key == pygame.K_w:
                 player_speed -= 7
             elif event.key == pygame.K_s:
@@ -112,10 +137,17 @@ while running:
 
     if ball.right <= 0:
         opponent_score += 1
+        if opponent_score == target_score:
+            game_is_over = True
+            end_text = 'YOU LOSE'
     elif ball.left >= SCREEN_WIDTH:
         player_score += 1
+        if player_score == target_score:
+            game_is_over = True
+            end_text = 'YOU WIN!'
 
     if ball.right <= 0 or ball.left >= SCREEN_WIDTH:
+        play_sound()
         ball_dx, ball_dy = restart_ball(ball_dx, ball_dy)
         score_time = pygame.time.get_ticks()
 
@@ -129,7 +161,12 @@ while running:
     pygame.draw.line(screen, PADDLE_COLOR, (SCREEN_WIDTH/2, 0),
                                 (SCREEN_WIDTH/2, SCREEN_HEIGHT))
     pygame.draw.ellipse(screen, PADDLE_COLOR, ball)
+    if game_is_over:
+        main_font.render_to(screen, (SCREEN_WIDTH/2.6, 100), end_text)
+        main_font.render_to(screen, (SCREEN_WIDTH/3.2, 150), restart_text)
 
 
     clock.tick(60)
     pygame.display.flip()
+
+
