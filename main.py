@@ -1,6 +1,25 @@
 import pygame
 
 
+def move_player():
+    player.y += player_speed
+    if player.top <= 0:
+        player.top = 0
+    if player.bottom >= SCREEN_HEIGHT:
+        player.bottom = SCREEN_HEIGHT
+
+
+def move_ball(dx, dy):
+    if ball.top <= 0 or ball.bottom >= SCREEN_HEIGHT:
+        dy = -dy
+    if ball.colliderect(player) or ball.colliderect(opponent):
+        dx = -dx
+    ball.x += dx
+    ball.y += dy
+
+    return dx, dy
+
+
 SCREEN_WIDTH = 900
 SCREEN_HEIGHT = 500
 
@@ -15,6 +34,7 @@ ball = pygame.Rect(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 20, 20)
 
 # Other variables
 player_speed = 0
+ball_dx, ball_dy = -7, 7
 
 # Screen initialization
 pygame.init()
@@ -42,11 +62,19 @@ while running:
                 player_speed -= 7
 
     # Update
-    player.y += player_speed
+    move_player()
+    ball_dx, ball_dy = move_ball(ball_dx, ball_dy)
 
     # Draw
     screen.fill(BG_COLOR)
     pygame.draw.rect(screen, PADDLE_COLOR, player)
+    pygame.draw.rect(screen, PADDLE_COLOR, opponent)
+    pygame.draw.line(screen, PADDLE_COLOR, (SCREEN_WIDTH/2, 0),
+                                (SCREEN_WIDTH/2, SCREEN_HEIGHT))
+    pygame.draw.ellipse(screen, PADDLE_COLOR, ball)
+
 
     clock.tick(60)
     pygame.display.flip()
+
+
